@@ -1,2 +1,135 @@
 # Obstacle-Detection-Radar-System
- Developed an IoT-enabled Ultrasonic Radar System using Raspberry Pi, servo motor, and HC-SR04 sensor for 180-degree scanning and real-time object detection. Designed a radar interface to display object distances, with scope for cloud integration for remote monitoring and analysis.
+# Developed an IoT-enabled Ultrasonic Radar System using Raspberry Pi, servo motor, and HC-SR04 sensor for 180-degree scanning and real-time object detection. Designed a radar interface to display object distances, with scope for cloud integration for remote monitoring and analysis.
+import tkinter as tk 
+import time 
+import math 
+import RPi.GPIO as GPIO 
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg 
+import matplotlib.pyplot as plt 
+# Set up GPIO for Raspberry Pi 
+GPIO.setmode(GPIO.BCM) 
+# Servo motor setup (FS90R) 
+servoPin = 18 
+GPIO.setup(servoPin, GPIO.OUT) 
+servo = GPIO.PWM(servoPin, 50)  # 50Hz frequency 
+servo.start(0) 
+# Ultrasonic sensor setup 
+TRIG = 23 
+ECHO = 24 
+32 
+GPIO.setup(TRIG, GPIO.OUT) 
+GPIO.setup(ECHO, GPIO.IN) 
+# Tkinter window setup 
+root = tk.Tk() 
+root.title("SciCraft Radar System") 
+root.geometry("800x700") 
+# Radar parameters 
+iAngle = 0 
+iDistance = 0 
+maxDistance = 40  # Max distance in cm 
+# Matplotlib figure and axis setup 
+fig, ax = plt.subplots(figsize=(6, 6)) 
+canvas = FigureCanvasTkAgg(fig, master=root) 
+canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1) 
+# Set black background 
+ax.set_facecolor('black') 
+33 
+34 
+ 
+# Labels for angle and distance 
+angle_label = tk.Label(root, text="Angle: 0°", font=("Arial", 14), fg="white", 
+bg="black") 
+angle_label.pack(pady=5) 
+distance_label = tk.Label(root, text="Distance: 0 cm", font=("Arial", 14), 
+fg="white", bg="black") 
+distance_label.pack(pady=5) 
+ 
+def setServoAngle(angle): 
+    duty = angle / 18 + 2 
+    servo.ChangeDutyCycle(duty) 
+    time.sleep(0.05) 
+ 
+def getDistance(): 
+    GPIO.output(TRIG, False) 
+    time.sleep(0.1) 
+    GPIO.output(TRIG, True) 
+    time.sleep(0.00001) 
+    GPIO.output(TRIG, False) 
+ 
+    while GPIO.input(ECHO) == 0: 
+        pulse_start = time.time() 
+35 
+ 
+ 
+    while GPIO.input(ECHO) == 1: 
+        pulse_end = time.time() 
+ 
+    pulse_duration = pulse_end - pulse_start 
+    distance = pulse_duration * 17150  # Calculate distance in cm 
+    return min(round(distance, 2), maxDistance) 
+ 
+def drawRadar(angle, distance): 
+    ax.clear()  # Clear the previous frame 
+    ax.set_xlim(-maxDistance, maxDistance) 
+    ax.set_ylim(0, maxDistance) 
+    ax.set_aspect('equal') 
+ 
+    # Draw radar arcs (10cm, 20cm, 30cm, 40cm) in blue 
+    for r in range(10, maxDistance + 10, 10): 
+        circle = plt.Circle((0, 0), r, color='blue', fill=False) 
+        ax.add_patch(circle) 
+ 
+    # Draw radar angle lines (30°, 60°, 90°, 120°, 150°) in blue 
+    for ang in range(30, 181, 30): 
+36 
+ 
+        ax.plot([0, maxDistance * math.cos(math.radians(ang))], 
+                [0, maxDistance * math.sin(math.radians(ang))], 'blue') 
+ 
+    # Draw sweeping radar line in blue 
+    ax.plot([0, maxDistance * math.cos(math.radians(angle))], 
+            [0, maxDistance * math.sin(math.radians(angle))], 'blue', linewidth=2) 
+ 
+    # Draw the detected object (in red) 
+    if distance < maxDistance: 
+        x = distance * math.cos(math.radians(angle)) 
+        y = distance * math.sin(math.radians(angle)) 
+        ax.plot(x, y, 'ro', markersize=10) 
+ 
+    ax.set_xticks([]) 
+    ax.set_yticks([]) 
+ 
+    # Update the canvas with the new radar frame 
+    canvas.draw() 
+ 
+def updateRadar(): 
+    global iAngle, iDistance 
+37 
+ 
+ 
+    setServoAngle(iAngle)  # Move servo to the current angle 
+    iDistance = getDistance()  # Get the current distance from the ultrasonic 
+sensor 
+ 
+    # Update radar display 
+    drawRadar(iAngle, iDistance) 
+ 
+    # Update angle and distance on the Tkinter window 
+    angle_label.config(text=f"Angle: {iAngle}°") 
+    distance_label.config(text=f"Distance: {iDistance:.2f} cm") 
+ 
+    # Sweep the radar 
+    iAngle += 1 
+    if iAngle >= 180: 
+        iAngle = 0  # Reset the angle after completing the sweep 
+ 
+    root.after(50, updateRadar)  # Schedule the next radar update 
+ 
+# Start the radar system 
+root.after(50, updateRadar) 
+ 
+# Start the Tkinter main loop 
+root.mainloop() 
+# Cleanup GPIO and servo when finished 
+servo.stop() 
+GPIO.cleanup() 
