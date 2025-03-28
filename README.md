@@ -15,8 +15,7 @@ servo = GPIO.PWM(servoPin, 50)  # 50Hz frequency
 servo.start(0) 
 # Ultrasonic sensor setup 
 TRIG = 23 
-ECHO = 24 
-32 
+ECHO = 24  
 GPIO.setup(TRIG, GPIO.OUT) 
 GPIO.setup(ECHO, GPIO.IN) 
 # Tkinter window setup 
@@ -33,8 +32,6 @@ canvas = FigureCanvasTkAgg(fig, master=root)
 canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1) 
 # Set black background 
 ax.set_facecolor('black') 
-33 
-34 
  
 # Labels for angle and distance 
 angle_label = tk.Label(root, text="Angle: 0°", font=("Arial", 14), fg="white", 
@@ -58,7 +55,6 @@ def getDistance():
  
     while GPIO.input(ECHO) == 0: 
         pulse_start = time.time() 
-35 
  
  
     while GPIO.input(ECHO) == 1: 
@@ -81,7 +77,6 @@ def drawRadar(angle, distance):
  
     # Draw radar angle lines (30°, 60°, 90°, 120°, 150°) in blue 
     for ang in range(30, 181, 30): 
-36 
  
         ax.plot([0, maxDistance * math.cos(math.radians(ang))], 
                 [0, maxDistance * math.sin(math.radians(ang))], 'blue') 
@@ -104,7 +99,6 @@ def drawRadar(angle, distance):
  
 def updateRadar(): 
     global iAngle, iDistance 
-37 
  
  
     setServoAngle(iAngle)  # Move servo to the current angle 
